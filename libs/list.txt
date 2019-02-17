@@ -1,0 +1,4 @@
+Libs to add here:
+        - QT5           -> graphical system
+        - personal libs -> bluetooth management for windows and unix-like
+                           systems
