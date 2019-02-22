@@ -1,0 +1,39 @@
+QWidget {
+    background-color: #1d1d1d; 
+    font-size: 12px;
+} 
+
+QPushButton {
+    background-color: #1d1d1d; 
+    font-size: 18px; 
+    font-family: Consolas for Powerline, Hack;
+    color: #00ff00;
+    border: none; 
+} 
+
+QPushButton:hover {
+    border: none; 
+    background-color: #4242ef;
+    color: #ff00ff; 
+} 
+
+QPushButton:flat {
+    border: none; 
+    background-color: #ff00ff;
+} 
+
+QLineEdit {
+    font-family: Monospace, Consolas for Powerline, Hack;
+    font-size: 32px;
+    color: #00ff00;
+    border: none;
+    border-bottom: 1px solid #00ff00;
+}
+
+QLabel {
+    background-color: #1d1d1d;
+    font-size: 150px;
+    font-family: Consolas for Powerline, Hack;
+    color: #00ff00;
+    border-color: #ffffff;
+}; 

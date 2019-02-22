@@ -1,5 +1,3 @@
 TODO:
-        - implement the "Connected" check (needs the bluetooth library)
-        - correct the alarms vector
-        - make the button "Add alarm" actually add an alarm
-        - fix the "3 alarms" limitation (with dynamically allocated objects)
+	- implementare i socket unix per la connessione bluetooth
+	- implementare windows.h per i socket di windows per il bluetooth
