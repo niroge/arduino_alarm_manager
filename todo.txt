@@ -1,3 +1,5 @@
 TODO:
-	- implementare i socket unix per la connessione bluetooth
-	- implementare windows.h per i socket di windows per il bluetooth
+	- make the program to actually send the alarms
+	- implement the BSD sockets to send the data to the alarm device
+	- implement the windows sockets to send the data to the alarm device
+	- implement the system locale

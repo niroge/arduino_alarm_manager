@@ -15,10 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// Author: Nitu Robert-Georgian
+// Author: Nitu Robert Georgian
 // Email: 0x0FF1C3@protonmail.com
 
-// include the libraries
+// include the QT5 libraries
 #include <QApplication>
 #include <QObject>
 #include <QWidget>
@@ -47,7 +47,10 @@
 
 // define the constants
 #define ALARMS_FILE "alarms.dat"
-#define THEMES_FILE "theme.css"
+#define THEMES_DIRECTORY "theme"
+#define THEMES_MAIN_WINDOW "main.css"
+#define THEMES_ADD_ALARM_WINDOW "add_alarm.css"
+#define THEMES_POPUP_MESSAGE "message.css"
 
 // this structure holds the alarm
 struct alarm_struct {
@@ -59,18 +62,16 @@ struct alarm_struct {
 class AddAlarmWidget;
 class MainWindow;
 
-// global variable (style)
-QString stylesheet = "";
-
 // define the classes
 class AddAlarmWidget : public QObject {
+    QString local_stylesheet;
 	QWidget *this_widget = new QWidget();
 	QSpinBox *spinbox_hours = new QSpinBox;
 	QSpinBox *spinbox_minutes = new QSpinBox;
 
 public:
 	bool visible = false;
-	
+
 	AddAlarmWidget();
 	void load_theme();
 	void save_close();
@@ -83,7 +84,7 @@ AddAlarmWidget::AddAlarmWidget()
 	QPushButton *pushbutton_done = new QPushButton("Add", this_widget);
 
 	this_widget->setWindowTitle("Add an alarm");
-	this_widget->setStyleSheet(stylesheet);
+	this_widget->setStyleSheet(local_stylesheet);
 
 	spinbox_hours->setValue(12);
 	spinbox_hours->setRange(0, 23);
@@ -91,7 +92,7 @@ AddAlarmWidget::AddAlarmWidget()
 	spinbox_minutes->setValue(30);
 	spinbox_minutes->setRange(0, 59);
 
-	pushbutton_done->setStyleSheet(stylesheet);
+	pushbutton_done->setStyleSheet(local_stylesheet);
 	pushbutton_done->setStyleSheet("font-size: 12px");
 
 	formlayout->addRow(tr("&Hours: "), spinbox_hours);
@@ -102,12 +103,58 @@ AddAlarmWidget::AddAlarmWidget()
 	QObject::connect(pushbutton_done, &QPushButton::clicked, this, &AddAlarmWidget::save_close);
 
 	this_widget->setLayout(formlayout);
+
+	load_theme();
+}
+
+void AddAlarmWidget::load_theme()
+{
+	std::string current_line;
+	std::string theme_file_name;
+	std::fstream theme_file;
+
+	theme_file_name = std::string(THEMES_DIRECTORY) + "/" + std::string(THEMES_ADD_ALARM_WINDOW);
+
+	theme_file.open(theme_file_name, std::fstream::in);
+
+	if (!theme_file.is_open()) {
+		theme_file.open(theme_file_name, std::fstream::out);
+
+		theme_file << "/* This is the theme of the AddAlarmWidget, customize it as you wish */" << std::endl
+		           << "QWidget {" << std::endl
+		           << "    background-color: #1d1d1d;" << std::endl
+			   << "    color: #fafafa;" << std::endl
+			   << "    font-family: Hack, Monospace, Sans-Serif;" << std::endl
+			   << "} " << std::endl << std::endl
+			   << "QSpinBox {" << std::endl
+			   << "    background-color: #1d1d1d;" << std::endl
+			   << "    color: #fafafa;" << std::endl
+			   << "    font-family: Hack, Monospace, Sans-Serif;" << std::endl
+			   << "} " << std::endl << std::endl
+			   << "QPushButton {" << std::endl
+			   << "    border: none;" << std::endl
+			   << "    font-family: Hack, Monospace, Sans-Serif;" << std::endl
+			   << "    color: #fafafa;" << std::endl
+			   << "    font-size: 12px;" << std::endl
+			   << "} " << std::endl << std::endl
+			   << "QPushButton:hover {" << std::endl
+			   << "    background-color: #3030be;" << std::endl
+			   << "} " << std::endl;
+
+		theme_file.close();
+		theme_file.open(theme_file_name, std::fstream::in);
+	}
+
+	while (std::getline(theme_file, current_line))
+		local_stylesheet += QString::fromStdString(current_line);
+
+	this_widget->setStyleSheet(local_stylesheet);
 }
 
 void AddAlarmWidget::show_widget()
 {
 	this_widget->show();
-	
+
 	visible = true;
 
 	while (!this_widget->isVisible());
@@ -152,15 +199,19 @@ void AddAlarmWidget::save_close()
 
 	alarms_file << title << std::endl;
 	alarms_file.close();
-	
+
 	this_widget->close();
 }
 
 
 class MainWindow : public QObject {
+	int bluetooth_socket = -1;
 	bool device_connected = false;
+	std::string custom_message = "";
 	std::vector<alarm_struct> alarms;
-	
+
+    QString local_stylesheet = "";
+
 	QWidget *this_widget = new QWidget();
 	QTimer *timer_time = new QTimer(this_widget);
 	QTimer *timer_alarms = new QTimer(this_widget);
@@ -181,10 +232,10 @@ class MainWindow : public QObject {
 
 	QIcon *icon_add = new QIcon("icons/add.png");
 	QIcon *icon_delete = new QIcon("icons/delete.png");
-	
+
 public:
 	MainWindow();
-	
+
 	void add_alarms();
 	void load_theme();
 	void update_time();
@@ -200,7 +251,7 @@ public:
 
 MainWindow::MainWindow()
 {
-	load_theme();	
+	load_theme();
 	insert_elements();
 	configure_elements();
 	insert_title();
@@ -212,7 +263,7 @@ MainWindow::MainWindow()
 	QObject::connect(pushbutton_del0, &QPushButton::clicked, this, [this] {delete_alarm(0);});
 	QObject::connect(pushbutton_del1, &QPushButton::clicked, this, [this] {delete_alarm(1);});
 	QObject::connect(pushbutton_del2, &QPushButton::clicked, this, [this] {delete_alarm(2);});
-	
+
 	timer_time->start(500);
 	timer_alarms->start(50);
 
@@ -230,71 +281,75 @@ void MainWindow::add_alarms()
 			break;
 		}
 	}
-	
+
 	if (can_add) {
 		file_pointer.open(ALARMS_FILE, std::fstream::out | std::fstream::trunc);
 
 		for (int i = 0; i < 3; i++)
 			file_pointer << alarms[i].hour << " " << alarms[i].minute << std::endl;
-		
+
 		file_pointer << lineedit_message->text().toStdString() << std::endl;
 		add_alarm_widget->show_widget();
 	} else {
 		popup_message("Error", "Cannot add more than 3 alarms!");
 	}
-	
+
 	while (add_alarm_widget->visible);
 }
 
 void MainWindow::load_theme()
 {
 	std::fstream theme_file;
-	theme_file.open(THEMES_FILE, std::fstream::in);
+	std::string theme_file_name = std::string(THEMES_DIRECTORY) + "/" + std::string(THEMES_MAIN_WINDOW);
+	theme_file.open(theme_file_name, std::fstream::in);
 
 	if (!theme_file.is_open()) {
 		// theme file is not installed, creating it...
-		theme_file.open(THEMES_FILE, std::fstream::out);
-		theme_file << "QWidget {" << std::endl
+		theme_file.open(theme_file_name, std::fstream::out);
+		theme_file << "/* this is the theme of the main widget, customize it as you wish */" << std::endl << std::endl
+		           << "QWidget {" << std::endl
 			   << "    background-color: #1d1d1d; " << std::endl
-			   << "} " << std::endl
-			   <<         std::endl
+			   << "} " << std::endl << std::endl
 			   << "QPushButton {" << std::endl
 			   << "    background-color: #1d1d1d; " << std::endl
 			   << "    font-size: 18px; " << std::endl
 			   << "    font-family: Hack, Monospace, sans-serif; " << std::endl
 			   << "    color: #fafafa; " << std::endl
 			   << "    border: none; " << std::endl
-			   << "} " << std::endl
-			   <<         std::endl
+			   << "} " << std::endl << std::endl
 			   << "QPushButton:hover {" << std::endl
 			   << "    border: none; " << std::endl
 			   << "    background-color: #4242ef;" << std::endl
 			   << "    color: #fafafa; " << std::endl
-			   << "} " << std::endl
-			   <<         std::endl
+			   << "} " << std::endl << std::endl
 			   << "QPushButton:flat {" << std::endl
 			   << "    border: none; " << std::endl
 			   << "    background-color: #1d1d1d;" << std::endl
-			   << "} " << std::endl
-			   <<         std::endl
+			   << "} " << std::endl << std::endl
 			   << "QLabel {" << std::endl
 			   << "    background-color: #1d1d1d;" << std::endl
 			   << "    font-size: 150px;" << std::endl
 			   << "    font-family: Hack, Monospace, sans-serif;" << std::endl
 			   << "    color: #00ff00;" << std::endl
-			   << "}; " << std::endl;
+			   << "} " << std::endl << std::endl
+			   << "QLineEdit {" << std::endl
+			   << "    border: 0px solid #000000;" << std::endl
+			   << "    border-bottom: 1px solid #00ff00;" << std::endl
+			   << "    font-size: 24px;" << std::endl
+			   << "    color: #00ff00;" << std::endl
+			   << "};" << std::endl;
 
 		theme_file.close();
 
-		theme_file.open(THEMES_FILE, std::fstream::in);
+		theme_file.open(theme_file_name, std::fstream::in);
 	}
 
 	// theme file is already created
 	std::string line;
-	
+
 	while (std::getline(theme_file, line))
-		stylesheet += QString::fromStdString(line);
-	
+		local_stylesheet += QString::fromStdString(line);
+
 	theme_file.close();
 }
 
@@ -323,7 +378,7 @@ void MainWindow::update_alarms()
 		file_pointer.close();
 		file_pointer.open(ALARMS_FILE, std::fstream::in);
 	}
-	
+
 	for (int i = 0; i < 3; i++) {
 		file_pointer >> alarm.hour >> alarm.minute;
 		alarms.push_back(alarm);
@@ -356,7 +411,7 @@ void MainWindow::insert_title()
 		file_pointer.close();
 		file_pointer.open(ALARMS_FILE, std::fstream::in);
 	}
-	
+
 	for (int i = 0; i < 3; i++) {
 		file_pointer >> alarm.hour >> alarm.minute;
 		alarms.push_back(alarm);
@@ -366,7 +421,9 @@ void MainWindow::insert_title()
 		std::getline(file_pointer, current_line);
 	} while (current_line.empty());
 
+	custom_message = current_line;
 	lineedit_message->setText(QString::fromStdString(current_line));
+
 	file_pointer.close();
 }
 
@@ -375,13 +432,13 @@ void MainWindow::delete_alarm(int id)
 	alarm_struct alarm;
 	std::string current_line;
 	std::fstream file_pointer;
-	
+
 	file_pointer.open(ALARMS_FILE, std::fstream::in);
 	alarms.clear();
 
 	for (int i = 0; i < 3; i++) {
 		file_pointer >> alarm.hour >> alarm.minute;
-		
+
 		if (i == id) {
 			alarm.hour = 25;
 			alarm.minute = 3;
@@ -463,26 +520,37 @@ void MainWindow::insert_elements()
 	gridlayout->addWidget(label_time0, 4, 1, 1, 4);
 	gridlayout->addWidget(label_time1, 5, 1, 1, 4);
 	gridlayout->addWidget(label_time2, 6, 1, 1, 4);
-	
+
 	this_widget->setLayout(gridlayout);
 }
 
 void MainWindow::connect_bluetooth()
 {
 	if (!device_connected) {
+		bluetooth_socket = niroge::bluetooth_connect("0f:f1:c3:0c:af:fe");
+		if (bluetooth_socket == -1) {
+			popup_message("Connection error!", "An error occoured while trying to connect to the "
+				      "clock. Please check that the bluetooth is activated and that the clock "
+				      "is in a short range");
+			return;
+		}
+
 		pushbutton_connect->setText("Upload ");
 		device_connected = true;
 		popup_message("Configuration uploaded!", "Task terminated successfully! Disconnected from the device");
 	} else {
+		// niroge::bluetooth_send(bluetooth_socket, lol_me);
+		bluetooth_socket = -1;
 		pushbutton_connect->setText("Connect");
 		device_connected = false;
 		popup_message("Connected!", "You are connected to the device");
+
 	}
 }
 
 void MainWindow::configure_elements()
 {
-	this_widget->setStyleSheet(stylesheet);
+	this_widget->setStyleSheet(local_stylesheet);
 
 	label_time->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
 	gridlayout->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
@@ -507,11 +575,11 @@ void MainWindow::configure_elements()
 	pushbutton_del1->setIcon(*icon_delete);
 	pushbutton_del1->setFixedSize(icon_delete->actualSize(icon_delete->availableSizes().first()));
 	pushbutton_del1->setToolTip("delete this alarm");
-	
+
 	pushbutton_del2->setIcon(*icon_delete);
 	pushbutton_del2->setFixedSize(icon_delete->actualSize(icon_delete->availableSizes().first()));
 	pushbutton_del2->setToolTip("delete this alarm");
-	
+
 	label_time->setToolTip("Current time");
 
 	label_time0->setStyleSheet("font-size: 42px; font-family: Monospace, sans-serif;");
@@ -524,16 +592,51 @@ void MainWindow::configure_elements()
 
 void MainWindow::popup_message(const char *title, const char *message)
 {
-	// to implement right now
+	std::string theme_file_name = std::string(THEMES_DIRECTORY) + "/" + std::string(THEMES_POPUP_MESSAGE);
+	std::string current_line;
+	std::fstream theme_file;
+
+	QString popup_stylesheet = "";
+
+	theme_file.open(theme_file_name, std::fstream::in);
+
+	if (!theme_file.is_open()) {
+		theme_file.open(theme_file_name, std::fstream::out);
+		theme_file << "/* this file is the stylesheet of the popup message, customize it as you wish */" << std::endl << std::endl
+		           << "QWidget { " << std::endl
+			   << "    background-color: #1d1d1d;" << std::endl
+			   << "} " << std::endl << std::endl
+			   << "QLabel { " << std::endl
+			   << "    color: #fafafa;" << std::endl
+			   << "    font-family: Hack, Monospace, Sans-Serif;" << std::endl
+			   << "    font-size: 12px;" << std::endl
+			   << "}; " << std::endl;
+
+		theme_file.close();
+		theme_file.open(theme_file_name, std::fstream::in);
+	}
+
+	while (std::getline(theme_file, current_line))
+		popup_stylesheet += QString::fromStdString(current_line);
+
+
 	QWidget *child_error = new QWidget;
-	child_error->setWindowTitle(title);
-	child_error->setStyleSheet(stylesheet);
-	child_error->setStyleSheet("font-size: 24px");
-	
 	QGridLayout *gridlayout = new QGridLayout();
 	QLabel *label_error = new QLabel(message, child_error);
+	QPushButton *pushbutton_confirm = new QPushButton(child_error);
+
+	child_error->setWindowTitle(title);
+	child_error->setStyleSheet(popup_stylesheet);
+	child_error->setMaximumWidth(640);
+
+	label_error->setWordWrap(true);
+
+	pushbutton_confirm->setText("Close");
+	QObject::connect(pushbutton_confirm, SIGNAL(clicked()), child_error, SLOT(hide()));
 
 	gridlayout->addWidget(label_error);
+	gridlayout->addWidget(pushbutton_confirm);
+
 	child_error->setLayout(gridlayout);
 	child_error->show();
 }
@@ -542,6 +645,6 @@ int main(int argument_counter, char **argument_vector)
 {
 	QApplication arduino_alarm_manager(argument_counter, argument_vector);
 	MainWindow main_widget;
-	
+
 	return arduino_alarm_manager.exec();
 }

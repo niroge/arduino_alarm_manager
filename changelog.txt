@@ -1,0 +1,8 @@
+0.1:
+	- has theming support
+	- can connect to the device (maybe?, cannot test right now)
+	- has the main widgets enabled
+
+needs:
+	- review
+	- probably a better default theme, this sucks hard
