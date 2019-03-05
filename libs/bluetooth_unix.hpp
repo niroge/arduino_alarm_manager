@@ -10,7 +10,7 @@ namespace niroge {
 	{
 		sockaddr_rc socket_rfcomm;
 		int bluetooth_socket_id, status;
-	
+
 		std::cout << "Connecting to " << mac_address << std::endl;
 		std::cout << "----------------------------" << std::endl;
 		std::cout << "Socket system: unix" << std::endl;
@@ -37,7 +37,19 @@ namespace niroge {
 		std::cout << "Closing connection..." << std::endl;
 	}
 
-	int bluetooth_send(int socket_id, int bytes, const char *message) {
-		return write(socket_id, message, bytes);
+	int bluetooth_send(int socket_id, const char *message, int bytes)  {
+		std::cout << "sending data to socket " << socket_id << "..." << std::endl;
+		std::cout << "content: ";
+
+		for (int i = 0; i < bytes; i++) {
+			std::cout << (int) message[i] << "d ";
+		}
+
+		std::cout << std::endl;
+
+		int exit_code = write(socket_id, message, bytes);
+
+		std::cout << "Bytes sent: " << exit_code << "/" << bytes << std::endl;
+		return exit_code;
 	}
 }

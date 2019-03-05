@@ -210,7 +210,7 @@ class MainWindow : public QObject {
 	std::string custom_message = "";
 	std::vector<alarm_struct> alarms;
 
-    QString local_stylesheet = "";
+	QString local_stylesheet = "";
 
 	QWidget *this_widget = new QWidget();
 	QTimer *timer_time = new QTimer(this_widget);
@@ -236,17 +236,18 @@ class MainWindow : public QObject {
 public:
 	MainWindow();
 
-	void add_alarms();
-	void load_theme();
-	void update_time();
-	void insert_title();
-	void update_alarms();
-	void insert_elements();
+	void add_alarms(void);
+	void load_theme(void);
+	void update_time(void);
+	void insert_title(void);
+	void update_alarms(void);
+	void insert_elements(void);
 	void delete_alarm(int);
 	void display_alarm(int);
-	void connect_bluetooth();
-	void configure_elements();
+	void connect_bluetooth(void);
+	void configure_elements(void);
 	void popup_message(const char *, const char *);
+	void send_alarms_to_arduino(void);
 };
 
 MainWindow::MainWindow()
@@ -534,17 +535,17 @@ void MainWindow::connect_bluetooth()
 				      "is in a short range");
 			return;
 		}
-
 		pushbutton_connect->setText("Upload ");
 		device_connected = true;
-		popup_message("Configuration uploaded!", "Task terminated successfully! Disconnected from the device");
+		popup_message("Connected!", "You are connected to the device");
 	} else {
 		// niroge::bluetooth_send(bluetooth_socket, lol_me);
+		send_alarms_to_arduino();
+		close(bluetooth_socket);
 		bluetooth_socket = -1;
 		pushbutton_connect->setText("Connect");
 		device_connected = false;
-		popup_message("Connected!", "You are connected to the device");
-
+		popup_message("Configuration uploaded!", "Task terminated successfully! Disconnected from the device");
 	}
 }
 
@@ -639,6 +640,34 @@ void MainWindow::popup_message(const char *title, const char *message)
 
 	child_error->setLayout(gridlayout);
 	child_error->show();
+}
+
+void MainWindow::send_alarms_to_arduino(void)
+{
+	std::string title = lineedit_message->text().toStdString();
+
+	// send the current time to the arduino device
+	int packet_position = 3;
+	char current_hour = (char) stoi(QTime::currentTime().toString("hh").toStdString());
+	char current_minute = (char) stoi(QTime::currentTime().toString("mm").toStdString());
+	char current_seconds = (char) stoi(QTime::currentTime().toString("ss").toStdString());
+
+	char packet[32] = "\000"; // first 3 bytes -> current time, 6 -> hour, minute pair for alarms, 23 -> custom message
+	packet[0] = current_hour;
+	packet[1] = current_minute;
+	packet[2] = current_seconds;
+
+	for (int i = 0; i < 3; i++) {
+		packet[packet_position] = alarms[i].hour;
+		packet[packet_position + 1] = alarms[i].minute;
+		packet_position += 2;
+	}
+
+	strcat(packet, title.c_str());
+
+	niroge::bluetooth_send(bluetooth_socket, packet, sizeof(packet));
+
+	// the connection is closed by the caller function
 }
 
 int main(int argument_counter, char **argument_vector)

@@ -1,0 +1,23 @@
+/* This is the theme of the AddAlarmWidget, customize it as you wish */
+QWidget {
+    background-color: #1d1d1d;
+    color: #fafafa;
+    font-family: Hack, Monospace, Sans-Serif;
+} 
+
+QSpinBox {
+    background-color: #1d1d1d;
+    color: #fafafa;
+    font-family: Hack, Monospace, Sans-Serif;
+} 
+
+QPushButton {
+    border: none;
+    font-family: Hack, Monospace, Sans-Serif;
+    color: #fafafa;
+    font-size: 12px;
+} 
+
+QPushButton:hover {
+    background-color: #3030be;
+} 

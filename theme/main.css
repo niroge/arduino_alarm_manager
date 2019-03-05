@@ -1,0 +1,38 @@
+/* this is the theme of the main widget, customize it as you wish */
+
+QWidget {
+    background-color: #1d1d1d; 
+} 
+
+QPushButton {
+    background-color: #1d1d1d; 
+    font-size: 18px; 
+    font-family: Hack, Monospace, sans-serif; 
+    color: #fafafa; 
+    border: none; 
+} 
+
+QPushButton:hover {
+    border: none; 
+    background-color: #4242ef;
+    color: #fafafa; 
+} 
+
+QPushButton:flat {
+    border: none; 
+    background-color: #1d1d1d;
+} 
+
+QLabel {
+    background-color: #1d1d1d;
+    font-size: 150px;
+    font-family: Hack, Monospace, sans-serif;
+    color: #00ff00;
+} 
+
+QLineEdit {
+    border: 0px solid #000000;
+    border-bottom: 1px solid #00ff00;
+    font-size: 24px;
+    color: #00ff00;
+};

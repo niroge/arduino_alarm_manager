@@ -1,0 +1,11 @@
+/* this file is the stylesheet of the popup message, customize it as you wish */
+
+QWidget { 
+    background-color: #1d1d1d;
+} 
+
+QLabel { 
+    color: #fafafa;
+    font-family: Hack, Monospace, Sans-Serif;
+    font-size: 12px;
+}; 

@@ -1,3 +1,7 @@
+0.1.1:
+	- fixed a bug that showed an unrelated error message
+	- now it does send the data to the device
+
 0.1:
 	- has theming support
 	- can connect to the device (maybe?, cannot test right now)
